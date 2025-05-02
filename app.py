@@ -1,8 +1,8 @@
 from flask import Flask, request, abort
 import os
+import json
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage
 
 app = Flask(__name__)
 
@@ -14,21 +14,19 @@ handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 @app.route("/line/webhook", methods=["POST"])
 def callback():
-    signature = request.headers["X-Line-Signature"]
+    signature = request.headers.get("X-Line-Signature")
     body = request.get_data(as_text=True)
+
+    print("📦 收到 webhook：")
+    print(json.dumps(json.loads(body), indent=2, ensure_ascii=False))  # 印出完整 JSON
 
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
+        print("❌ 簽章錯誤")
         abort(400)
-    return "OK"
 
-@handler.add(MessageEvent, message=TextMessage)
-def handle_message(event):
-    if event.source.type == "group":
-        print("✅ 群組 ID:", event.source.group_id)
-    elif event.source.type == "user":
-        print("✅ 私訊 userId:", event.source.user_id)
+    return "OK"
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
