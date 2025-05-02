@@ -25,14 +25,7 @@ def callback():
         abort(400)
     return 'OK'
 
-@handler.add(MessageEvent, message=TextMessage)
-def handle_message(event):
-    if event.source.type == 'group':
-        print("✅ 接收到群組訊息！")
-        print("🔍 群組 ID:", event.source.group_id)
-    elif event.source.type == 'user':
-        print("✅ 接收到個人訊息")
-        print("🔍 userId:", event.source.user_id)
+
 
 
 @handler.add(MessageEvent, message=TextMessage)
