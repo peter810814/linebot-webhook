@@ -1,7 +1,7 @@
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage
+from linebot.models import MessageEvent
 import os
 import json
 
@@ -22,7 +22,7 @@ def callback():
     print("📡 收到 LINE webhook 請求")
     signature = request.headers.get('X-Line-Signature')
     body = request.get_data(as_text=True)
-    print("📦 webhook payload:\n", body)  # 顯示原始 JSON
+    print("📦 webhook payload:\n", body)
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
@@ -30,28 +30,22 @@ def callback():
         abort(400)
     return 'OK'
 
-@handler.add(MessageEvent, message=TextMessage)
+@handler.add(MessageEvent)
 def handle_message(event):
     print("🧪 有進來 webhook！")
     print("📨 來源類型：", event.source.type)
 
-    if event.source.type == 'group':
-        print("✅ 接收到群組訊息")
-        print("🔍 群組 ID:", event.source.group_id)
-    elif event.source.type == 'user':
-        print("✅ 接收到個人訊息")
-        print("🔍 userId:", event.source.user_id)
-    elif event.source.type == 'room':
-        print("📦 來自多人聊天室")
-        print("🔍 room ID:", event.source.room_id)
-    else:
-        print("❓ 來源未知：", event.source)
+    # 強制列印所有事件內容（幫助 debug）
+    print("📦 event JSON：")
+    print(json.dumps(event.__dict__, indent=2, default=str))
 
-    # 回覆收到的訊息
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextMessage(text=f"你說的是：「{event.message.text}」")
-    )
+    # 額外列印 ID
+    if event.source.type == 'group':
+        print("✅ 是群組！群組 ID:", event.source.group_id)
+    elif event.source.type == 'user':
+        print("✅ 是個人對話！userId:", event.source.user_id)
+    elif event.source.type == 'room':
+        print("✅ 是多人聊天室！roomId:", event.source.room_id)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
