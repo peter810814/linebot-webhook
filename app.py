@@ -3,6 +3,7 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage
 import os
+import json
 
 app = Flask(__name__)
 
@@ -18,9 +19,10 @@ handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 @app.route("/line/webhook", methods=['POST'])
 def callback():
-    print("📡 收到 LINE webhook 請求")  # 確認 webhook 有進來
+    print("📡 收到 LINE webhook 請求")
     signature = request.headers.get('X-Line-Signature')
     body = request.get_data(as_text=True)
+    print("📦 webhook payload:\n", body)  # 顯示原始 JSON
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
@@ -39,8 +41,13 @@ def handle_message(event):
     elif event.source.type == 'user':
         print("✅ 接收到個人訊息")
         print("🔍 userId:", event.source.user_id)
+    elif event.source.type == 'room':
+        print("📦 來自多人聊天室")
+        print("🔍 room ID:", event.source.room_id)
+    else:
+        print("❓ 來源未知：", event.source)
 
-    # 回覆收到的訊息（可選）
+    # 回覆收到的訊息
     line_bot_api.reply_message(
         event.reply_token,
         TextMessage(text=f"你說的是：「{event.message.text}」")
